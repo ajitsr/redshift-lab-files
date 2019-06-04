@@ -1,0 +1,233 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "vpc02975015fb94407cc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "InstanceTenancy": "default",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "false",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ImmersionDay-VPC"
+          }
+        ]
+      }
+    },
+    "subnet0d088b9a432a63b3b": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": "eu-west-1a",
+        "VpcId": {
+          "Ref": "vpc02975015fb94407cc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public-ImmersionVPC-1a"
+          }
+        ]
+      }
+    },
+    "igw0208cb14c27ff7aa5": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ImmersionVPC-IGW"
+          }
+        ]
+      }
+    },
+    "doptb889f8de": {
+      "Type": "AWS::EC2::DHCPOptions",
+      "Properties": {
+        "DomainName": "eu-west-1.compute.internal",
+        "DomainNameServers": [
+          "AmazonProvidedDNS"
+        ]
+      }
+    },
+    "acl06664c8f656bafe83": {
+      "Type": "AWS::EC2::NetworkAcl",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpc02975015fb94407cc"
+        }
+      }
+    },
+    "rtb0d6e0e7707b240526": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpc02975015fb94407cc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "PublicRTB-ImmersionVPC"
+          }
+        ]
+      }
+    },
+    "clusubnetredshiftclustersubnet": {
+      "Type": "AWS::Redshift::ClusterSubnetGroup",
+      "Properties": {
+        "Description": "Redshift cluster subnet ",
+        "SubnetIds": [
+          {
+            "Ref": "subnet0d088b9a432a63b3b"
+          }
+        ]
+      }
+    },
+    "sgRedshiftLabSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow Redshift cluster, ssh and rdp access",
+        "VpcId": {
+          "Ref": "vpc02975015fb94407cc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "RedshiftLab-SG"
+          }
+        ]
+      }
+    },
+    "acl3": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "CidrBlock": "0.0.0.0/0",
+        "Egress": "true",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "RuleNumber": "100",
+        "NetworkAclId": {
+          "Ref": "acl06664c8f656bafe83"
+        }
+      }
+    },
+    "acl4": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "CidrBlock": "0.0.0.0/0",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "RuleNumber": "100",
+        "NetworkAclId": {
+          "Ref": "acl06664c8f656bafe83"
+        }
+      }
+    },
+    "subnetacl3": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "acl06664c8f656bafe83"
+        },
+        "SubnetId": {
+          "Ref": "subnet0d088b9a432a63b3b"
+        }
+      }
+    },
+    "gw2": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpc02975015fb94407cc"
+        },
+        "InternetGatewayId": {
+          "Ref": "igw0208cb14c27ff7aa5"
+        }
+      }
+    },
+    "subnetroute6": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "rtb0d6e0e7707b240526"
+        },
+        "SubnetId": {
+          "Ref": "subnet0d088b9a432a63b3b"
+        }
+      }
+    },
+    "route2": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "rtb0d6e0e7707b240526"
+        },
+        "GatewayId": {
+          "Ref": "igw0208cb14c27ff7aa5"
+        }
+      },
+      "DependsOn": "gw2"
+    },
+    "dchpassoc2": {
+      "Type": "AWS::EC2::VPCDHCPOptionsAssociation",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpc02975015fb94407cc"
+        },
+        "DhcpOptionsId": {
+          "Ref": "doptb889f8de"
+        }
+      }
+    },
+    "ingress4": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgRedshiftLabSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "5439",
+        "ToPort": "5439",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "ingress5": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgRedshiftLabSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "ingress6": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgRedshiftLabSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "3389",
+        "ToPort": "3389",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress2": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgRedshiftLabSG"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    }
+  },
+  "Description": "Redshift-Foundation-Template"
+}
